@@ -12,7 +12,7 @@ import math
 from bs4 import BeautifulSoup 
 from datetime import date, datetime, timedelta
 from urllib2 import URLError, HTTPError
-from PIL import Image
+#from PIL import Image
 from cStringIO import StringIO
 
 
@@ -27,6 +27,7 @@ ADDON_PATH = xbmc.translatePath(ADDON.getAddonInfo('path'))
 ADDON_PATH_PROFILE = xbmc.translatePath(ADDON.getAddonInfo('profile'))
 XBMC_VERSION = float(re.findall(r'\d{2}\.\d{1}', xbmc.getInfoLabel("System.BuildVersion"))[0])
 LOCAL_STRING = ADDON.getLocalizedString
+ROOTDIR = ADDON.getAddonInfo('path')
 
 #Settings
 settings = xbmcaddon.Addon(id='plugin.video.mlbtv')
@@ -40,9 +41,13 @@ NO_SPOILERS = settings.getSetting(id="no_spoilers")
 FAV_TEAM = str(settings.getSetting(id="fav_team"))
 TEAM_NAMES = settings.getSetting(id="team_names")
 TIME_FORMAT = settings.getSetting(id="time_format")
-VIEW_MODE = settings.getSetting(id='view_mode')
 SINGLE_TEAM = str(settings.getSetting(id='single_team'))
-
+#Proxy Settings
+PROXY_ENABLED = str(settings.getSetting(id='use_proxy'))
+PROXY_SERVER = str(settings.getSetting(id='proxy_server'))
+PROXY_PORT = str(settings.getSetting(id='proxy_port'))
+PROXY_USER = str(settings.getSetting(id='proxy_user'))
+PROXY_PWD = str(settings.getSetting(id='proxy_pwd'))
 
 #Colors
 SCORE_COLOR = 'FF00B7EB'
@@ -57,17 +62,13 @@ CRITICAL ='FFD10D0D'
 FINAL = 'FF666666'
 FREE = 'FF43CD80'
 
-#Localization
-local_string = xbmcaddon.Addon(id='plugin.video.mlbtv').getLocalizedString
-ROOTDIR = xbmcaddon.Addon(id='plugin.video.mlbtv').getAddonInfo('path')
+
 
 #Images
-ICON = ROOTDIR+"/icon.png"
-FANART = ROOTDIR+"/fanart.jpg"
-#PREV_ICON = ROOTDIR+"/resources/images/prev.png"
-#NEXT_ICON = ROOTDIR+"/resources/images/next.png"
-PREV_ICON = ROOTDIR+"/icon.png"
-NEXT_ICON = ROOTDIR+"/icon.png"
+ICON = os.path.join(ROOTDIR,"icon.png")
+FANART = os.path.join(ROOTDIR,"fanart.jpg")
+PREV_ICON = os.path.join(ROOTDIR,"icon.png")
+NEXT_ICON = os.path.join(ROOTDIR,"icon.png")
 
 if SINGLE_TEAM == 'true':
     MASTER_FILE_TYPE = 'master_wired.m3u8'
@@ -87,9 +88,6 @@ UA_ATBAT = 'At Bat/13268 CFNetwork/758.2.8 Darwin/15.0.0'
 #Playlists
 RECAP_PLAYLIST = xbmc.PlayList(0)
 EXTENDED_PLAYLIST = xbmc.PlayList(1)
-#HIGHLIGHT_PLAYLIST = xbmc.PlayList(2)
-
-
 
 
 
@@ -102,9 +100,11 @@ def find(source,start_str,end_str):
     else:
         return ''
 
+
 def getGameIcon(home,away):
     #Check if game image already exists
-    image_path = ROOTDIR+'/resources/images/'+away+'vs'+home+'.png'
+    #image_path = ROOTDIR+'/resources/images/'+away+'vs'+home+'.png'
+    image_path = os.path.join(ROOTDIR,'resources/images/'+away+'vs'+home+'.png')
     file_name = os.path.join(image_path)
     if not os.path.isfile(file_name): 
         try:
@@ -120,14 +120,14 @@ def createGameIcon(home,away,image_path):
     bg = Image.new('RGB', (500,250), (0,0,0)) 
     #http://mlb.mlb.com/mlb/images/devices/240x240/110.png
     #img_file = urllib.urlopen('http://mlb.mlb.com/mlb/images/devices/76x76/'+home+'.png ')
-    img_file = urllib.urlopen('http://mlb.mlb.com/mlb/images/devices/240x240/'+home+'.png ')
+    img_file = urllib.urlopen('http://mlb.mlb.com/mlb/images/devices/240x240/'+home+'.png')
     im = StringIO(img_file.read())
     home_image = Image.open(im)
     #bg.paste(home_image, (267,74), home_image)
     bg.paste(home_image, (255,5), home_image)
 
     #img_file = urllib.urlopen('http://mlb.mlb.com/mlb/images/devices/76x76/'+away+'.png ')
-    img_file = urllib.urlopen('http://mlb.mlb.com/mlb/images/devices/240x240/'+away+'.png ')
+    img_file = urllib.urlopen('http://mlb.mlb.com/mlb/images/devices/240x240/'+away+'.png')
     im = StringIO(img_file.read())
     away_image = Image.open(im)
     #bg.paste(away_image, (57,74), away_image)    
@@ -318,7 +318,7 @@ def addPlaylist(name,game_day,mode,iconimage,fanart=None):
         liz.setProperty('fanart_image', FANART)
 
     
-    info = {'plot':'Watch all the days highlights for '+game_day,'tvshowtitle':'MLB','title':name,'originaltitle':name,'aired':game_day,'genre':'Sports'}
+    info = {'plot':'Watch all the days highlights for '+game_day,'tvshowtitle':'MLB','title':name,'originaltitle':name,'aired':game_day,'genre':LOCAL_STRING(700),'mediatype':'video'}
     audio_info, video_info = getAudioVideoInfo()
 
     if info != None:
@@ -374,15 +374,9 @@ def getFavTeamColor():
                 'Toronto Blue Jays':'FFE8291C',
                 'Washington Nationals':'FFAB0003'}
 
-    # Default to red
-    #fav_team_color = "FFFF0000"                
-    #try:
-    print FAV_TEAM
+    
     fav_team_color = team_colors[FAV_TEAM]
-    print fav_team_color
-    #except:
-    #pass
-
+    
     return  fav_team_color
 
 
@@ -419,12 +413,8 @@ def getFavTeamId():
                 'Texas Rangers':'140',
                 'Toronto Blue Jays':'141',
                 'Washington Nationals':'120'}
-
-    print FAV_TEAM
+    
     fav_team_id = team_ids[FAV_TEAM]
-    print fav_team_id
-    #except:
-    #pass
 
     return  fav_team_id
 
@@ -458,20 +448,6 @@ def getConfigFile():
     response.close()
     
 
-def setViewMode():
-    global VIEW_MODE
-    window = xbmcgui.Window(xbmcgui.getCurrentWindowId())
-    current_view_mode = str(window.getFocusId())
-    if current_view_mode != VIEW_MODE and current_view_mode != "0":
-        settings.setSetting(id='view_mode', value=current_view_mode) 
-        VIEW_MODE = settings.getSetting(id='view_mode')
-
-    getViewMode()
-    
-def getViewMode():
-    xbmc.executebuiltin("Container.SetViewMode("+VIEW_MODE+")")
-
-
 def convertSubtitles(suburl):
     #suburl = subtitles url
     #xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, xbmcgui.ListItem(path = url))
@@ -492,8 +468,7 @@ def convertSubtitles(suburl):
         #<p begin='18:00:08;29' end='18:00:35;23'>&gt;&gt;&gt;</p>
         captions = re.compile("<p begin='(.+?)' end='(.+?)'>(.+?)</p>").findall(pg)
         idx = 1
-        for cstart, cend, caption in captions:
-            print idx
+        for cstart, cend, caption in captions:            
             cstart = cstart.replace('.',',')
             cend   = cend.replace('.',',').split('"',1)[0]
             caption = caption.replace('<br/>','\n').replace('&gt;','>')
@@ -505,15 +480,12 @@ def convertSubtitles(suburl):
 
 
 def getStreamQuality(stream_url):    
-    stream_title = []     
-    print "Getting Stream Quality for " + stream_url
+    stream_title = []         
     req = urllib2.Request(stream_url)
     response = urllib2.urlopen(req)                    
     master = response.read()
     response.close()
             
-    print master        
-
     line = re.compile("(.+?)\n").findall(master)  
 
     for temp_url in line:
@@ -523,8 +495,7 @@ def getStreamQuality(stream_url):
             if match:
                 bandwidth = match.group()
                 if 0 < len(bandwidth) < 6:
-                    bandwidth = bandwidth.replace('K',' kbps')
-                    print bandwidth
+                    bandwidth = bandwidth.replace('K',' kbps')                    
                     stream_title.append(bandwidth)                           
     
 
@@ -545,8 +516,7 @@ def natural_sort_key(s):
 
 def getBlackoutLiftTime(url):
     #"http://mediadownloads.mlb.com/ttml/2016/04/14/584182283.ttml"
-    #url = 'http://mediadownloads.mlb.com/ttml/2016/04/14/584182283.ttml'
-    print "url " + url
+    #url = 'http://mediadownloads.mlb.com/ttml/2016/04/14/584182283.ttml'    
     req = urllib2.Request(url)    
     req.add_header('Connection', 'close')
     req.add_header('User-Agent', UA_IPAD)
@@ -555,14 +525,13 @@ def getBlackoutLiftTime(url):
         xml_data = response.read()                                 
         response.close()                
     except HTTPError as e:
-        print 'The server couldn\'t fulfill the request.'
-        print 'Error code: ', e.code          
+        xbmc.log('The server couldn\'t fulfill the request.')
+        xbmc.log('Error code: ', e.code)
         sys.exit()
     
     
     #<p begin="19:59:16;28" end="19:59:20;06">PRESENTED BY THE ALLEGHENY HEALTH NETWORK.</p>
-    #match = re.compile("<p begin='(.+?)' end='(.+?)'>",re.DOTALL).findall(xml_data)   
-    print xml_data
+    #match = re.compile("<p begin='(.+?)' end='(.+?)'>",re.DOTALL).findall(xml_data)       
     match = re.compile('<inningTime type="SCAST" start="(.+?)" end="(.+?)"/>',re.DOTALL).findall(xml_data) 
     
     last_end_time = ''
@@ -583,12 +552,6 @@ def getBlackoutLiftTime(url):
          local_lift_time = local_lift_time.strftime('%I:%M %p').lstrip('0')
     else:
          local_lift_time = local_lift_time.strftime('%H:%M')
-
-    print "END TIME = " + str(last_end_time[:-3])
-    print "Minutes until lift " + str(minutes_until_lift)
-    print "Lift time utc " + str(lift_time)    
-    print "Lift time local " + local_lift_time
-
-
+    
     return minutes_until_lift, local_lift_time
     
