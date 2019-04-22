@@ -1,5 +1,7 @@
 from resources.lib.mlb import *
 
+xbmc.log('TEDROMER main', level=xbmc.LOGNOTICE)
+                             
 params = get_params()
 name = None
 mode = None
@@ -27,8 +29,10 @@ if 'teams_stream' in params:
 if 'stream_date' in params:
     stream_date = urllib.unquote_plus(params["stream_date"])
 
+xbmc.log('TEDROMER mode is %s' % mode, level=xbmc.LOGNOTICE)
 if mode is None:
     categories()
+    xbmc.log('TEDROMER finished categories')
     xbmcplugin.endOfDirectory(addon_handle)
 
 elif mode == 100:
@@ -79,6 +83,13 @@ elif mode == 400:
 elif mode == 500:
     myTeamsGames()
     xbmcplugin.endOfDirectory(addon_handle)                   
+
+elif mode == 600:
+    xbmc.log('play_teams_game', level=xbmc.LOGNOTICE)
+    play_teams_game('136', 'RSNW')
+    # play_teams_game('142', 'MASN')  # orioles
+    # play_teams_game('137', 'NBCSBA')  # giants
+    
 
 elif mode == 900:
     getGamesForDate(stream_date)
